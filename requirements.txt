@@ -1,0 +1,4 @@
+PyGetWindow
+pyautogui
+matplotlib
+scikit-image
