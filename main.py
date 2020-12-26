@@ -1,6 +1,6 @@
-from game_window_snapshot import get_active_window_im
-from game_parser import process_ref_to_state
-from debug_tools import debug_print_state
+from src.game_window_snapshot import get_active_window_im
+from src.game_parser import process_ref_to_state
+from src.debug_tools import debug_print_state
 from PIL import Image
 
 
