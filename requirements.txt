@@ -2,3 +2,4 @@ PyGetWindow
 pyautogui
 matplotlib
 scikit-image
+clipboard
