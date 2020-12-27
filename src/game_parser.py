@@ -67,7 +67,8 @@ def process_ref_to_state(im):
 
     # when we scanned the gaming grid, crop the image so we only have the pixels of the game.
     # it will be easier to manipulate without offsets.
-    game_im = im.crop((game_left, game_top, game_right, game_bottom))
+    game_bbox = (game_left, game_top, game_right, game_bottom)
+    game_im = im.crop(game_bbox)
 
     def most_common_in_list(l: list):
         return max(set(l), key=l.count)
@@ -115,13 +116,17 @@ def process_ref_to_state(im):
     game_im.save('game.png')
     """
 
-    rows = []
+    game_state = []
     for y in range(matrix_height):
         row = []
         for x in range(matrix_width):
             ix = x * cell_width + cell_width // 2
             iy = y * cell_width + cell_width // 2
             row.append(get_im_area_cell_state(game_im, ix, iy))
-        rows.append(row)
+        game_state.append(row)
 
-    return rows
+    return {
+        'game_2d_state': game_state,
+        'game_bbox': game_bbox,
+        'game_cell_width': cell_width
+    }
