@@ -250,15 +250,31 @@ def next_clicks(game_mat):
             return [(cell[1], cell[2], UNCOVER_AS_SAFE) for cell in safe_cells]
 
     print('Deduction unsuccessful. Take your guess human.')
-    #its up to the player. The algorithm wont take a random guess to lose the game ;)
+    # its up to the player. The algorithm wont take a random guess to lose the game ;)
     return []
 
-os.mkdir('history')
-os.rmdir
+
+# Switch to true if you want to memo the images of game.
+# Note its slow.
+DEBUG_REWATCH = False
+snapshot_dir = 'minesweeper_snapshots'
+if DEBUG_REWATCH:
+    if os.path.exists(snapshot_dir):
+        shutil.rmtree(snapshot_dir)
+    os.mkdir(snapshot_dir)
+
+it_cnt = 0
 while True:
     im, window_region = get_active_window_im()
+    # example of debugging state
+    #im = Image.open('minesweeper_snapshots/19.png')
     if im is None:
         continue
+
+    if DEBUG_REWATCH:
+        im.save(os.path.join(snapshot_dir, str(it_cnt)+'.png'))
+        it_cnt += 1
+
     game_state = process_ref_to_state(im)
     game_mat = game_state['game_2d_state']
     debug_print_state(game_mat)
@@ -268,3 +284,4 @@ while True:
     for click in clicks:
         cx, cy, left_click = click
         click_cell_in_game(window_region, game_state, cx, cy, left_click)
+        ag.moveTo(1,1)

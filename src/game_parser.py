@@ -42,7 +42,6 @@ def process_ref_to_state(im):
                     game_bottom = y
                     game_right = x
 
-    border_im.save('test.png')
     ppx = None
     borders_x = []
     # FIND all borders based on first pixel row.
@@ -107,16 +106,6 @@ def process_ref_to_state(im):
             return NUMBERS.index(most_common_px) + 1
 
         raise Exception('unhandled px color / symbol state')
-
-    """
-    # DEBUG GAME
-    for y in range(game_im.height):
-        for x in range(game_im.width):
-            px = game_im.getpixel((x, y))
-            if px not in [*NUMBERS, FLAG_COLOR, *BG_TILE_COLORS]:
-                game_im.putpixel((x, y), (255, 255, 255))
-    game_im.save('game.png')
-    """
 
     game_state = []
     for y in range(matrix_height):
