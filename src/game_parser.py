@@ -8,10 +8,11 @@ TWO_COLOR = (56, 142, 60)
 THREE_COLOR = (211, 47, 47)
 FOUR_COLOR = (123, 31, 162)
 FIVE_COLOR = (255, 143, 0)
+SIX_COLOR = (0, 151, 167)
 FLAG_COLOR = (242, 54, 7)
 UNCHECKED_COLOR1 = (170, 215, 81)  # light green
 UNCHECKED_COLOR2 = (162, 209, 73)  # dark green
-NUMBERS = [ONE_COLOR, TWO_COLOR, THREE_COLOR, FOUR_COLOR, FIVE_COLOR]
+NUMBERS = [ONE_COLOR, TWO_COLOR, THREE_COLOR, FOUR_COLOR, FIVE_COLOR, SIX_COLOR]
 UNCHECKED_COLORS = [UNCHECKED_COLOR1, UNCHECKED_COLOR2]
 ZERO_COLORS = [ZERO_COLOR1, ZERO_COLOR2]
 BG_TILE_COLORS = [UNCHECKED_COLOR1, UNCHECKED_COLOR2, ZERO_COLOR1, ZERO_COLOR2]
@@ -41,6 +42,7 @@ def process_ref_to_state(im):
                     game_bottom = y
                     game_right = x
 
+    border_im.save('test.png')
     ppx = None
     borders_x = []
     # FIND all borders based on first pixel row.
@@ -122,7 +124,8 @@ def process_ref_to_state(im):
         for x in range(matrix_width):
             ix = x * cell_width + cell_width // 2
             iy = y * cell_width + cell_width // 2
-            row.append(get_im_area_cell_state(game_im, ix, iy))
+            cell_state = get_im_area_cell_state(game_im, ix, iy)
+            row.append(cell_state)
         game_state.append(row)
 
     return {
