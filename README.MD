@@ -1,4 +1,14 @@
+# PREVIEW
+
+    
+[![AI-PREVIEW](./preview.gif)](https://www.youtube.com/watch?v=uGO0jpTkNBI)
+
+https://www.youtube.com/watch?v=uGO0jpTkNBI
+
+
 # NOTE!
+
+* this projects requires windows os and google chrome. (but can be changed to work on other platforms and / or browsers.)
 
 **If using virtualenv COPY UIAutomationCore.dll from %windir%/System32 into "env" (virtualenv) folder**
 
