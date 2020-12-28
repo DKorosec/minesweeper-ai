@@ -92,9 +92,10 @@ def next_clicks(game_mat):
         return distinct(clicks)
 
     print('Rules 1 & 2 failed. Using simple reasoning.')
-    #RULE3: very simple reasoning. Find FIRST unsolved cell that matches following constrains:
+    # RULE3: very simple reasoning. Find FIRST unsolved cell that matches following constrains:
     # - for all combinations of its bomb positions around it must yield ONLY 1 solution (all other combinations must break somehow neighbors)
     # - for that one solution set down flags and click open cells. and exit immediately.
+
     def assert_bombs(picked_cells):
         for _, px, py in picked_cells:
             game_mat[py][px] = '!'
@@ -111,18 +112,20 @@ def next_clicks(game_mat):
             if flag_cnt > nv:
                 return False
         return True
-    
-    
-    def reason_rule3(cx,cy):
+
+    def reason_rule3(cx, cy):
         cell_value = game_mat[cy][cx]
-        free_cells = get_condition_neighbors(game_mat, cx, cy, lambda cell: cell == '?')
-        solved_cells = get_condition_neighbors(game_mat, cx, cy, lambda cell: cell == '!')
+        free_cells = get_condition_neighbors(
+            game_mat, cx, cy, lambda cell: cell == '?')
+        solved_cells = get_condition_neighbors(
+            game_mat, cx, cy, lambda cell: cell == '!')
         must_guess_cells_cnt = cell_value - len(solved_cells)
         assert len(free_cells) >= must_guess_cells_cnt
         solutions = []
         for picked_cells in itertools.combinations(free_cells, must_guess_cells_cnt):
             assert_bombs(picked_cells)
-            neighbors_ok = all([neighbors_still_ok(px, py) for _, px, py in picked_cells])
+            neighbors_ok = all([neighbors_still_ok(px, py)
+                                for _, px, py in picked_cells])
             if neighbors_ok:
                 solutions.append(picked_cells)
             revert_assert_bombs(picked_cells)
@@ -130,8 +133,9 @@ def next_clicks(game_mat):
         if len(solutions) != 1:
             return None
         solution = solutions[0]
-        safe_cells = [(x,y, UNCOVER_AS_SAFE) for _,x,y in list(set(free_cells) - set(solution))]
-        bomb_cells = [(x,y, FLAG_AS_BOMB) for _,x,y in solution]
+        safe_cells = [(x, y, UNCOVER_AS_SAFE)
+                      for _, x, y in list(set(free_cells) - set(solution))]
+        bomb_cells = [(x, y, FLAG_AS_BOMB) for _, x, y in solution]
         return [*bomb_cells, *safe_cells]
 
     unsolved_cells = []
@@ -151,8 +155,8 @@ def next_clicks(game_mat):
                 unsolved_cells.append((x, y, solved_neighbors_cnt))
 
     for cell in unsolved_cells:
-        cx,cy = cell[:2]
-        if solution := reason_rule3(cx,cy):
+        cx, cy = cell[:2]
+        if solution := reason_rule3(cx, cy):
             return solution
 
     print('Rule 3 failed. Cannot solve simply, deduction required. expect some computational time for next step.')
@@ -174,10 +178,6 @@ def next_clicks(game_mat):
         cell_value = game_mat[cy][cx]
         free_cells = get_condition_neighbors(
             game_mat, cx, cy, lambda cell: cell == '?')
-
-        # a.k.a. visited cells
-        for cell in free_cells:
-            unknown_cells_checked.append(cell)
 
         solved_cells = get_condition_neighbors(
             game_mat, cx, cy, lambda cell: cell == '!')
@@ -238,6 +238,11 @@ def next_clicks(game_mat):
         if no_solutions:
             del recursion_lock[(cx, cy)]
             return False
+
+        # a.k.a. visited cells only store them if solution was yielded. Otherwise we would make wrong assumption
+        # because we only really visited them if we found any viable solution on those free cells.
+        for cell in free_cells:
+            unknown_cells_checked.append(cell)
 
         for solution_bombs in solutions:
             # now each (potential but accepted) bomb for that tile

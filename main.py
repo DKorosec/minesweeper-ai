@@ -24,9 +24,9 @@ it_cnt = 0
 while True:
     im, window_region = get_active_window_im()
 
-    # example of debugging state
+    # example of debugging state: for instance if debugger was open and 14.png was causing issue.
     #from PIL import Image
-    # im = Image.open('minesweeper_snapshots/14.png') for instance if debugger was open and 14.png was causing issue.
+    #im = Image.open('minesweeper_snapshots/0.png') 
 
     if im is None:
         continue
