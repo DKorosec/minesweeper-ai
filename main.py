@@ -100,7 +100,7 @@ def next_clicks(game_mat):
 
     # We got some solutions that 100% work from RULE 1 & RULE 2, use them so we get updated game state
     if len(clicks) > 0:
-        return clicks
+        return distinct(clicks)
 
     print('cannot solve simply, deduction required. expect some computational time for next step.')
 
