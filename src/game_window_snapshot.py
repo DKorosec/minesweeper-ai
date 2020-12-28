@@ -28,7 +28,7 @@ def get_active_window_im():
             return ImageChops.difference(im1, im2).getbbox() is None
 
         im1 = take_screenshot()
-        time.sleep(0.2)
+        time.sleep(0.05)
         im2 = take_screenshot()
         # prevent mid animation snapshot taking.
         if not equal(im1, im2):

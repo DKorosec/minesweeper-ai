@@ -24,7 +24,7 @@ while True:
 
     # example of debugging state: for instance if debugger was open and 14.png was causing issue.
     #from PIL import Image
-    #im = Image.open('minesweeper_snapshots/0.png') 
+    #im = Image.open('minesweeper_snapshots/0.png')
 
     if im is None:
         continue
@@ -34,14 +34,13 @@ while True:
         it_cnt += 1
 
     game_state = process_ref_to_state(im)
-    game_mat = game_state['game_2d_state']
-    debug_print_state(game_mat)
-    print('\n')
-    clicks = next_clicks(game_mat)
-    print(clicks)
+
+    debug_print_state(game_mat := game_state['game_2d_state'])
+    print(clicks := next_clicks(game_mat))
+
     for click in clicks:
         cx, cy, left_click = click
         click_cell_in_game(window_region, game_state, cx, cy, left_click)
-    
+
     if len(clicks) > 0:
         ag.moveTo(1, 1)
