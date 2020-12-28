@@ -17,9 +17,7 @@ if DEBUG_REWATCH:
     os.mkdir(snapshot_dir)
 
 # uncomment for speed, but it can fuckup presses with OS not buffering enough.
-#import pyautogui as ag
-#ag.PAUSE = 0.1
-
+ag.PAUSE = 0.05
 it_cnt = 0
 while True:
     im, window_region = get_active_window_im()
@@ -44,5 +42,6 @@ while True:
     for click in clicks:
         cx, cy, left_click = click
         click_cell_in_game(window_region, game_state, cx, cy, left_click)
-
-    ag.moveTo(1, 1)
+    
+    if len(clicks) > 0:
+        ag.moveTo(1, 1)

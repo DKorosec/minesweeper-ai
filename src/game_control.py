@@ -8,5 +8,6 @@ def click_cell_in_game(window_region, game_state, x, y, left_click=True):
     center_w = game_cell_dim // 2
     click_fn = ag.leftClick if left_click else ag.rightClick
 
-    click_fn(wleft+gleft+x*game_cell_dim+center_w,
-             wtop+gtop+y*game_cell_dim+center_w)
+    px = wleft+gleft+x*game_cell_dim+center_w
+    py = wtop+gtop+y*game_cell_dim+center_w
+    click_fn(px, py)
