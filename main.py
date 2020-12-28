@@ -12,6 +12,8 @@ import shutil
 
 import pyautogui as ag
 
+# TODO: move to game control
+
 
 def click_cell_in_game(window_region, game_state, x, y, left_click=True):
     wleft, wtop = window_region[:2]
@@ -24,6 +26,7 @@ def click_cell_in_game(window_region, game_state, x, y, left_click=True):
              wtop+gtop+y*game_cell_dim+center_w)
 
 
+# TODO move to ai.py
 NEIGHBOR8_VECTORS = [(1, 0), (1, 1), (0, 1), (-1, 1),
                      (-1, 0), (-1, -1), (0, -1), (1, -1)]
 
@@ -63,6 +66,15 @@ def next_clicks(game_mat):
     FLAG_AS_BOMB = False
     W, H = dim2d(game_mat)
     clicks = []
+
+    # RULE0: if every tile is unrevealed -> click random
+    are_all_unrevealed = all(
+        [game_mat[y][x] == '?' for y in range(H) for x in range(W)])
+    if are_all_unrevealed:
+        # ITS NEVER THE FIRST ONE
+        # https://youtu.be/LHY8NKj3RKs?t=79 #fingerscrossed
+        return [(random.randrange(W), random.randrange(H), UNCOVER_AS_SAFE)]
+
     # RULE1: if cell "N" has exactly N neighbors unrevealed (marked ? and !) then those two are bombs
     def cnd_unrevealed(cell): return cell in ['?', '!']
     for y in range(H):
@@ -102,34 +114,10 @@ def next_clicks(game_mat):
     if len(clicks) > 0:
         return distinct(clicks)
 
-    print('cannot solve simply, deduction required. expect some computational time for next step.')
-
-    # RULE 3: if rules 1 and 2 fail we must go hardcore.
-    # https://www.youtube.com/watch?v=fQGbXmkSArs
-    # Find cells with bomb count that still have unresolved bombs around them.
-    # (4 has 5x ? and 1x ! --> 3 out of 5x ? are bombs but we don't know which)
-    unsolved_cells = []
-    for y in range(H):
-        for x in range(W):
-            cell_value = game_mat[y][x]
-            is_bomb_cnt = isinstance(cell_value, int) and cell_value > 0
-            if not is_bomb_cnt:
-                continue
-
-            solved_neighbors_cnt = get_condition_neighbors_cnt(
-                game_mat, x, y, lambda cell: cell == '!')
-            left_unsolved = cell_value - solved_neighbors_cnt
-
-            assert left_unsolved >= 0
-            if left_unsolved != 0:
-                unsolved_cells.append((x, y, solved_neighbors_cnt))
-
-    # start solving with cells that already have most neighbors solved. (this way we start solving those with least combinations required - greedy)
-    unsolved_cells = sorted(unsolved_cells, key=lambda v: v[2], reverse=True)
-    traverse_memo = dict()
-    recursion_lock = dict()
-    def traversed(x, y): (x, y) in traverse_memo
-
+    print('Rules 1 & 2 failed. Using simple reasoning.')
+    #RULE3: very simple reasoning. Find FIRST unsolved cell that matches following constrains:
+    # - for all combinations of its bomb positions around it must yield ONLY 1 solution (all other combinations must break somehow neighbors)
+    # - for that one solution set down flags and click open cells. and exit immediately.
     def assert_bombs(picked_cells):
         for _, px, py in picked_cells:
             game_mat[py][px] = '!'
@@ -146,6 +134,61 @@ def next_clicks(game_mat):
             if flag_cnt > nv:
                 return False
         return True
+    
+    
+    def reason_rule3(cx,cy):
+        cell_value = game_mat[cy][cx]
+        free_cells = get_condition_neighbors(game_mat, cx, cy, lambda cell: cell == '?')
+        solved_cells = get_condition_neighbors(game_mat, cx, cy, lambda cell: cell == '!')
+        must_guess_cells_cnt = cell_value - len(solved_cells)
+        assert len(free_cells) >= must_guess_cells_cnt
+        solutions = []
+        for picked_cells in itertools.combinations(free_cells, must_guess_cells_cnt):
+            assert_bombs(picked_cells)
+            neighbors_ok = all([neighbors_still_ok(px, py) for _, px, py in picked_cells])
+            if neighbors_ok:
+                solutions.append(picked_cells)
+            revert_assert_bombs(picked_cells)
+
+        if len(solutions) != 1:
+            return None
+        solution = solutions[0]
+        safe_cells = [(x,y, UNCOVER_AS_SAFE) for _,x,y in list(set(free_cells) - set(solution))]
+        bomb_cells = [(x,y, FLAG_AS_BOMB) for _,x,y in solution]
+        return [*bomb_cells, *safe_cells]
+
+    unsolved_cells = []
+    for y in range(H):
+        for x in range(W):
+            cell_value = game_mat[y][x]
+            is_bomb_cnt = isinstance(cell_value, int) and cell_value > 0
+            if not is_bomb_cnt:
+                continue
+
+            solved_neighbors_cnt = get_condition_neighbors_cnt(
+                game_mat, x, y, lambda cell: cell == '!')
+            left_unsolved = cell_value - solved_neighbors_cnt
+
+            assert left_unsolved >= 0
+            if left_unsolved != 0:
+                unsolved_cells.append((x, y, solved_neighbors_cnt))
+
+    for cell in unsolved_cells:
+        cx,cy = cell[:2]
+        if solution := reason_rule3(cx,cy):
+            return solution
+
+    print('Rule 3 failed. Cannot solve simply, deduction required. expect some computational time for next step.')
+    # RULE 4: if rules 1 and 2 and 3 fail we must go hardcore.
+    # https://www.youtube.com/watch?v=fQGbXmkSArs
+    # Find cells with bomb count that still have unresolved bombs around them.
+    # (4 has 5x ? and 1x ! --> 3 out of 5x ? are bombs but we don't know which)
+
+    # start solving with cells that already have most neighbors solved. (this way we start solving those with least combinations required - greedy)
+    unsolved_cells = sorted(unsolved_cells, key=lambda v: v[2], reverse=True)
+    traverse_memo = dict()
+    recursion_lock = dict()
+    def traversed(x, y): (x, y) in traverse_memo
 
     def deduct_cell_solution(maybe_bomb_cells_checked, unknown_cells_checked, cx, cy):
         traverse_memo[(cx, cy)] = True
@@ -254,8 +297,7 @@ def next_clicks(game_mat):
     return []
 
 
-# Switch to true if you want to memo the images of game.
-# Note its slow.
+# Switch to true if you want to memo the images of game. (Note it's slow.)
 DEBUG_REWATCH = False
 snapshot_dir = 'minesweeper_snapshots'
 if DEBUG_REWATCH:
@@ -263,6 +305,8 @@ if DEBUG_REWATCH:
         shutil.rmtree(snapshot_dir)
     os.mkdir(snapshot_dir)
 
+# uncomment for speed, but it can fuckup presses with OS not buffering enough.
+#ag.PAUSE = 0.1
 it_cnt = 0
 while True:
     im, window_region = get_active_window_im()
@@ -284,4 +328,3 @@ while True:
     for click in clicks:
         cx, cy, left_click = click
         click_cell_in_game(window_region, game_state, cx, cy, left_click)
-        ag.moveTo(1,1)

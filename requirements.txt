@@ -3,3 +3,4 @@ pyautogui
 matplotlib
 scikit-image
 clipboard
+mss
