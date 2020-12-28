@@ -52,6 +52,7 @@ def next_clicks(game_mat):
         # https://youtu.be/LHY8NKj3RKs?t=79 #fingerscrossed
         return [(random.randrange(W), random.randrange(H), UNCOVER_AS_SAFE)]
 
+    print('Rule 1 & 2: find trivial bombs and free tiles')
     # RULE1: if cell "N" has exactly N neighbors unrevealed (marked ? and !) then those two are bombs
     def cnd_unrevealed(cell): return cell in ['?', '!']
     for y in range(H):
@@ -91,7 +92,7 @@ def next_clicks(game_mat):
     if len(clicks) > 0:
         return distinct(clicks)
 
-    print('Rules 1 & 2 failed. Using simple reasoning.')
+    print('Rules 1 & 2 failed. Trying Rule 3 with simple reasoning based on neighbor cells.')
     # RULE3: very simple reasoning. Find FIRST unsolved cell that matches following constrains:
     # - for all combinations of its bomb positions around it must yield ONLY 1 solution (all other combinations must break somehow neighbors)
     # - for that one solution set down flags and click open cells. and exit immediately.
@@ -159,7 +160,8 @@ def next_clicks(game_mat):
         if solution := reason_rule3(cx, cy):
             return solution
 
-    print('Rule 3 failed. Cannot solve simply, deduction required. expect some computational time for next step.')
+    print('Rule 3 failed. Cannot solve simply - deduction required')
+    print('Rule 4: with trying multiple combinations of planted bombs for possible location over all neighbors and neighbors of those neighbors until solved. Expect GREAT AMOUNT of computational time for next step.')
     # RULE 4: if rules 1 and 2 and 3 fail we must go hardcore.
     # https://www.youtube.com/watch?v=fQGbXmkSArs
     # Find cells with bomb count that still have unresolved bombs around them.
@@ -178,7 +180,6 @@ def next_clicks(game_mat):
         cell_value = game_mat[cy][cx]
         free_cells = get_condition_neighbors(
             game_mat, cx, cy, lambda cell: cell == '?')
-
         solved_cells = get_condition_neighbors(
             game_mat, cx, cy, lambda cell: cell == '!')
         must_guess_cells_cnt = cell_value - len(solved_cells)
@@ -199,27 +200,20 @@ def next_clicks(game_mat):
                 revert_assert_bombs(picked_cells)
                 continue
 
-            # recursion lock is needed so we dont get into a loop.
-            bomb_indicator_neighbors = [
-                n for n in get_condition_neighbors(game_mat, cx, cy, lambda cell: isinstance(cell, int) and cell > 0)
-                if (n[1], n[2]) not in recursion_lock
-            ]
-
-            neighbors_solved = True
             # check neighbor cells if our free cells intersect with theirs
-            for _, nx, ny in bomb_indicator_neighbors:
-                revert_assert_bombs(picked_cells)
-                # revert bombs so neighbor actually gets common cells (because this bomb is only assumed to be)
-                # but keep bombs planted from other frames. (so only revert those potential bombs to get free cells)
-                neighbor_free_cells = get_condition_neighbors(
-                    game_mat, nx, ny, lambda cell: cell == '?')
-                assert_bombs(picked_cells)
-                must_check_neighbor = len(list_intersection(
-                    free_cells, neighbor_free_cells)) > 0
-                # we check neighbors whose free cells intersect with ours. Our bomb flagging affects their position.
-                # this condition is mostly true for diagonal neighbors we don't want to check them (they will be checked by indirectly)
-                if not must_check_neighbor:
-                    continue
+            # if they do then we must also check them, because or decision affects theirs!
+            intersection_common_neighbors = set()
+            for _, fcx, fcy in free_cells:
+                nbrs = get_condition_neighbors(
+                    game_mat, fcx, fcy, lambda cell: isinstance(cell, int) and cell > 0)
+                for n in nbrs:
+                    # recursion lock is needed so we dont get into a loop.
+                    if (n[1], n[2]) not in recursion_lock:
+                        intersection_common_neighbors.add(n)
+            intersection_common_neighbors = list(intersection_common_neighbors)
+            neighbors_solved = True
+
+            for _, nx, ny in intersection_common_neighbors:
 
                 solved = deduct_cell_solution(
                     maybe_bomb_cells_checked, unknown_cells_checked, nx, ny)
@@ -263,6 +257,8 @@ def next_clicks(game_mat):
         cells_maybe_bomb = []
         solution = deduct_cell_solution(
             cells_maybe_bomb, cells_checked, cx, cy)
+
+        # what if we find all solutions? and then click on definitely cannot be bomb cells?
         if solution:
             # out of all solutions (maybe bombs) find set of cells where no bomb was found. Those are 100% (if algorithm works) safe.
             danger_cells = distinct(cells_maybe_bomb)
@@ -274,6 +270,6 @@ def next_clicks(game_mat):
 
             return [(cell[1], cell[2], UNCOVER_AS_SAFE) for cell in safe_cells]
 
-    print('Deduction unsuccessful. Take your guess human.')
+    print('Rule4 deduction unsuccessful. Take your guess human, it is up to you.')
     # its up to the player. The algorithm wont take a random guess to lose the game ;)
     return []

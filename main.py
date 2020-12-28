@@ -4,7 +4,7 @@ from src.ai import next_clicks
 from src.game_control import click_cell_in_game
 from src.game_window_snapshot import get_active_window_im
 from src.game_parser import process_ref_to_state
-from src.debug_tools import debug_print_state
+from src.debug_tools import debug_print_state, benchmark
 import shutil
 
 
@@ -36,7 +36,8 @@ while True:
     game_state = process_ref_to_state(im)
 
     debug_print_state(game_mat := game_state['game_2d_state'])
-    print(clicks := next_clicks(game_mat))
+    with benchmark('Time spent thinking'):
+        print(clicks := next_clicks(game_mat))
 
     for click in clicks:
         cx, cy, left_click = click
